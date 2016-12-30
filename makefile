@@ -9,6 +9,7 @@ SRC=\
 	debugger.cpp\
 	fpe_ctrl.cpp\
 	sched.cpp\
+	remotery.cpp
 
 OBJ=$(SRC:.cpp=.o)
 

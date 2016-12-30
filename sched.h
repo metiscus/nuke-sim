@@ -144,6 +144,9 @@ extern "C" {
 #endif
 #endif
 
+namespace base
+{
+
 typedef unsigned char sched_byte;
 typedef SCHED_UINT32 sched_uint;
 typedef SCHED_INT32 sched_int;
@@ -261,6 +264,7 @@ SCHED_API void scheduler_stop(struct scheduler*);
 #ifdef __cplusplus
 }
 #endif
+}
 #endif /* SCHED_H_ */
 
 /* ===============================================================
@@ -270,6 +274,7 @@ SCHED_API void scheduler_stop(struct scheduler*);
  * ===============================================================*/
 #ifdef SCHED_IMPLEMENTATION
 
+namespace base {
 /* windows requires Windows.h even if you use mingw */
 #if defined(_WIN32) || (defined(__MINGW32__) || defined(__MINGW64__))
     #define WIN32_LEAN_AND_MEAN
@@ -1051,6 +1056,8 @@ scheduler_stop(struct scheduler *s)
     s->pipes = 0;
     s->event = 0;
     s->args = 0;
+}
+
 }
 
 #endif /* SCHED_IMPLEMENTATION */
