@@ -144,9 +144,6 @@ extern "C" {
 #endif
 #endif
 
-namespace base
-{
-
 typedef unsigned char sched_byte;
 typedef SCHED_UINT32 sched_uint;
 typedef SCHED_INT32 sched_int;
@@ -264,7 +261,6 @@ SCHED_API void scheduler_stop(struct scheduler*);
 #ifdef __cplusplus
 }
 #endif
-}
 #endif /* SCHED_H_ */
 
 /* ===============================================================
@@ -274,7 +270,6 @@ SCHED_API void scheduler_stop(struct scheduler*);
  * ===============================================================*/
 #ifdef SCHED_IMPLEMENTATION
 
-namespace base {
 /* windows requires Windows.h even if you use mingw */
 #if defined(_WIN32) || (defined(__MINGW32__) || defined(__MINGW64__))
     #define WIN32_LEAN_AND_MEAN
@@ -306,7 +301,7 @@ template<typename T, int size_diff> struct sched_helper{enum {value = size_diff}
 template<typename T> struct sched_helper<T,0>{enum {value = sched_alignof<T>::value};};
 template<typename T> struct sched_alignof{struct Big {T x; char c;}; enum {
     diff = sizeof(Big) - sizeof(T), value = sched_helper<Big, diff>::value};};
-#define SCHED_ALIGNOF(t) (sched_alignof<t>::value)
+#define SCHED_ALIGNOF(t) (sched_alignof<t>::value);
 #else
 #define SCHED_ALIGNOF(t) ((char*)(&((struct {char c; t _h;}*)0)->_h) - (char*)0)
 #endif
@@ -338,10 +333,8 @@ template<typename T> struct sched_alignof{struct Big {T x; char c;}; enum {
 
 #ifndef SCHED_MEMSET
 #define SCHED_MEMSET sched_memset
-#define SCHED_NATIVE_MEMSET
 #endif
 
-#if SCHED_NATIVE_MEMSET
 SCHED_INTERN void
 sched_memset(void *ptr, sched_int c0, sched_size size)
 {
@@ -395,7 +388,6 @@ sched_memset(void *ptr, sched_int c0, sched_size size)
     #undef wsize
     #undef wmask
 }
-#endif
 
 #define sched_zero_struct(s) sched_zero_size(&s, sizeof(s))
 #define sched_zero_array(p,n) sched_zero_size(p, (n) * sizeof((p)[0]))
@@ -1056,8 +1048,6 @@ scheduler_stop(struct scheduler *s)
     s->pipes = 0;
     s->event = 0;
     s->args = 0;
-}
-
 }
 
 #endif /* SCHED_IMPLEMENTATION */

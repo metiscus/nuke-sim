@@ -4,5 +4,5 @@
 
 #define SCHED_MEMSET memset
 
-#include "sched.h"
+#include "scheduler.h"
 
