@@ -1,5 +1,5 @@
 CXXFLAGS=-gdwarf-4 -Wall -Wextra -pedantic -O0 -MD
-LDFLAGS=-lpthread `pkg-config --static --libs glfw3`
+LDFLAGS=-lpthread `pkg-config --static --libs glfw3` -lGL
 default: libbase.a example_test
 
 

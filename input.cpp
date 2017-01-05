@@ -2,6 +2,7 @@
 #include "window.h"
 #include <GLFW/glfw3.h>
 #include "logging.h"
+#include "remotery.h"
 
 namespace Input
 {
@@ -16,6 +17,7 @@ namespace Input
 	{
 		void keyboard_callback(GLFWwindow* win, int key, int scancode, int action, int mods)
 		{
+			rmt_ScopedCPUSample(keyboard_callback, 0);
 			IOEventCallback *callback = nullptr;
 
 			InputEvent event;
@@ -49,6 +51,7 @@ namespace Input
 
 		void mouse_button_callback(GLFWwindow* win, int button, int action, int mods)
 		{
+			rmt_ScopedCPUSample(mouse_button_callback, 0);
 			IOEventCallback *callback = nullptr;
 
 			InputEvent event;
@@ -77,6 +80,7 @@ namespace Input
 
 		void mouse_cursor_callback(GLFWwindow* win, double x, double y)
 		{
+			rmt_ScopedCPUSample(mouse_cursor_callback, 0);
 			IOEventCallback *callback = nullptr;
 
 			InputEvent event;
@@ -109,6 +113,7 @@ namespace Input
 
 	void update()
 	{
+		rmt_ScopedCPUSample(Input_update, 0);
 		LOG_F(1, "Input::update()");
 		glfwPollEvents();
 	}

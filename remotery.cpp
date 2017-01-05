@@ -45,6 +45,9 @@
     @OPENGL:        OpenGL event sampling
 */
 
+#define RMT_ENABLED 1
+#define RMT_USE_OPENGL 1
+
 #define RMT_IMPL
 #include "remotery.h"
 
