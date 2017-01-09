@@ -42,6 +42,7 @@ namespace Window
 
 			if(window_)
 			{
+				glfwMakeContextCurrent(window_);
 				glfwSetWindowPosCallback(window_, position_callback);
 				glfwSetWindowSizeCallback(window_, size_callback);
 

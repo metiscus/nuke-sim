@@ -1,4 +1,4 @@
-CXXFLAGS=-gdwarf-4 -Wall -Wextra -pedantic -O0 -MD
+CXXFLAGS=-gdwarf-4 -Wall -Wextra -pedantic -O0 -MD -Iimgui -I.
 LDFLAGS=-lpthread `pkg-config --static --libs glfw3` -lGL
 default: libbase.a example_test
 
@@ -20,10 +20,19 @@ libBase_OBJ=$(libBase_SRC:.cpp=.o)
 libbase.a: $(libBase_SRC) $(libBase_OBJ)
 	ar -rcs libbase.a $(libBase_OBJ)
 
-example_test: libbase.a example/test.cpp
-	$(CXX) $(CXXFLAGS) -I. -o example_test example/test.cpp -L. -lbase $(LDFLAGS)
+example_SRC=\
+	example/stb/stb_image.cpp\
+	example/stb/stb_truetype.cpp\
+	example/renderer_gl.cpp\
+	example/test.cpp\
+
+example_OBJ=$(example_SRC:.cpp=.o)
+
+example_test: libbase.a $(example_OBJ) $(example_SRC)
+	$(CXX) $(CXXFLAGS) -Iexample -o example_test $(example_OBJ) -L. -lbase $(LDFLAGS)
 
 clean:
 	-rm -f $(libBase_OBJ) $(libBase_OBJ:.o=.d) libbase.a
+	-rm -f $(example_OBJ) $(example_OBJ:.o=.d) example_test
 
 -include $(libBase_OBJ:.o=.d)
