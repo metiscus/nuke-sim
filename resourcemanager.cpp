@@ -65,11 +65,23 @@ namespace ResourceManager
 
 	ResourcePtr get_resource(Resource::Guid guid)
 	{
-		
+		ResourcePtr ret;
+
+		resources_mutex.lock();
+
+		auto itr = resources.find(guid);
+		if(itr != resources.end())
+		{
+			ret = itr->second;
+		}
+
+		resources_mutex.unlock();
+
+		return ret;
 	}
 
 	std::future<ResourcePtr> get_resource_from_file(const std::string& file)
 	{
-		
+
 	}
 }
