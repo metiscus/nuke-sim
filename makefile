@@ -4,7 +4,7 @@ default: libbase.a example_test
 
 
 libBase_SRC=\
-	assert.cpp\
+	assert_macros.cpp\
 	callstack.cpp\
 	debugger.cpp\
 	fpe_ctrl.cpp\
@@ -14,6 +14,13 @@ libBase_SRC=\
 	window.cpp\
 	input.cpp\
 	imgui/imgui.cpp\
+	resourcemanager.cpp\
+	imageresource.cpp\
+	private/stb_image.cpp\
+
+
+remotery.o: remotery.cpp
+	$(CXX) -c -gdwarf-4 -Wall -Wextra -O0 -MD -o remotery.o remotery.cpp
 
 libBase_OBJ=$(libBase_SRC:.cpp=.o)
 

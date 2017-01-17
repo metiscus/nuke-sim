@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "assert.h"
+#include "assert_macros.h"
 #include "debugger.h"
 #include "logging.h"
 #include "input.h"

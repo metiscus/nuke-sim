@@ -97,7 +97,7 @@ static rmtBool g_SettingsInitialized = RMT_FALSE;
         #include <malloc.h>
     #endif
 
-    #include <assert.h>
+    #include <cassert>
 
     #ifdef RMT_PLATFORM_WINDOWS
         #include <winsock2.h>

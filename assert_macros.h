@@ -26,6 +26,8 @@
 	Fredrik Kihlander
  */
 
+#include <cassert>
+
 #ifndef DBGTOOLS_ASSERT_INCLUDED
 #define DBGTOOLS_ASSERT_INCLUDED
 

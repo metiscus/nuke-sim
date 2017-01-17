@@ -27,7 +27,7 @@
  */
 
 #ifdef DBG_TOOLS_ASSERT_ENABLE
-#include <dbgtools/assert.h>
+#include <assert_macros.h>
 
 #include <stdio.h>
 #include <stdarg.h>
