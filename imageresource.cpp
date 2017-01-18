@@ -1,5 +1,6 @@
 #include "imageresource.h"
 #include "private/stb_image.h"
+#include "resourcemanager.h"
 
 #include <mutex>
 #include <memory>

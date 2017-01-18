@@ -16,6 +16,7 @@ libBase_SRC=\
 	resourcemanager.cpp\
 	imageresource.cpp\
 	private/stb_image.cpp\
+	binaryresource.cpp\
 
 
 remotery.o: remotery.cpp

@@ -14,8 +14,12 @@ class ImageResource
 	std::string filename_;
 
 public:
-	ImageResource();
-	~ImageResource();
+	ImageResource()
+	{
+		set_type(ImageResourceType);
+	}
+
+	~ImageResource() = default;
 
 	inline uint32_t get_width() const
 	{
@@ -32,7 +36,7 @@ public:
 		return channels_;
 	}
 
-	virtual uint32_t get_memory_usage() const
+	virtual uint64_t get_memory_usage() const
 	{
 		return width_ * height_ * channels_;
 	}

@@ -8,8 +8,9 @@
 
 enum ResourceType
 {
-	InvalidResource = 0,
-	ImageResource   = 1,
+	InvalidResourceType = 0,
+	ImageResourceType   = 1,
+	BinaryResourceType  = 2,
 };
 
 class Resource
@@ -27,7 +28,7 @@ private:
 
 public:
 	Resource()
-		: type_ (InvalidResource)
+		: type_ (InvalidResourceType)
 		, name_ ("")
 		, is_loaded_(false)
 	{
@@ -91,7 +92,7 @@ public:
 		return is_loaded_;
 	}
 
-	virtual uint32_t get_memory_usage() const = 0;
+	virtual uint64_t get_memory_usage() const = 0;
 	virtual Guid load_file(const std::string& filename) = 0;
 	virtual Guid load_file_as_guid(const std::string& filename, Guid guid) = 0;
 
