@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -17,6 +18,10 @@ class Resource
 {
 public:
 	typedef boost::uuids::uuid Guid;
+	static inline Guid random_guid()
+	{
+		return boost::uuids::random_generator()();
+	}
 
 private:
 	ResourceType type_;

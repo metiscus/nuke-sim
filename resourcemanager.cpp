@@ -142,6 +142,20 @@ namespace ResourceManager
 					resources_mutex.lock();
 					resources.insert(std::make_pair(guid, resource));
 					resources_mutex.unlock();
+					return guid;
+				}
+			}
+			break;
+
+			case BinaryResourceType:
+			{
+				auto resource = std::make_shared<BinaryResource>();
+				if(!resource->load_file_as_guid(file, guid).is_nil())
+				{
+					resources_mutex.lock();
+					resources.insert(std::make_pair(guid, resource));
+					resources_mutex.unlock();
+					return guid;
 				}
 			}
 			break;

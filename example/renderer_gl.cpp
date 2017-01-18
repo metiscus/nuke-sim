@@ -15,6 +15,9 @@
 #include "renderer_gl.h"
 #include "renderop.h"
 
+#include "resourcemanager.h"
+#include "binaryresource.h"
+
 RendererGL::RendererGL(int width, int height)
     : inFrame_(false)
 {
@@ -494,12 +497,21 @@ void RendererGL::free_sprites()
 void RendererGL::load_font(const char*filename, const std::vector<uint32_t>& sizes)
 {
     //TODO: break font loading out later
-    const uint32_t bufferSize = 1024 * 1024 * 10;
-    unsigned char *ttf_buffer = new unsigned char[bufferSize];
-    FILE *fp = fopen(filename, "rb");
-    if(fp) {
-        fread(ttf_buffer, 1, bufferSize, fp);
-        fclose(fp);
+    Resource::Guid guid = Resource::random_guid();
+    auto guid_future = ResourceManager::load_file_as_resource(std::string(filename), guid, BinaryResourceType);
+    guid_future.wait();
+    guid = guid_future.get();
+    if(!guid.is_nil())
+    {
+        std::shared_ptr<BinaryResource> res = std::static_pointer_cast<BinaryResource>(ResourceManager::get_resource(guid));
+    //const uint32_t bufferSize = 1024 * 1024 * 10;
+    //unsigned char *ttf_buffer = new unsigned char[bufferSize];
+    //FILE *fp = fopen(filename, "rb");
+    //if(fp) {
+        //fread(ttf_buffer, 1, bufferSize, fp);
+        //fclose(fp);
+
+        const uint8_t *ttf_buffer = res->get_data();
         uint8_t pixels[256*256];
         for(uint32_t ii=0; ii<sizes.size(); ++ii) {
             FontData *font = new FontData();
@@ -533,7 +545,11 @@ void RendererGL::load_font(const char*filename, const std::vector<uint32_t>& siz
             fonts_[sizes[ii]] = font;
         }
     }
-    delete[] ttf_buffer;
+    else
+    {
+        fprintf(stderr, "Failed to load the font!\n");
+    }
+    //delete[] ttf_buffer;
 }
 
 void RendererGL::free_fonts()

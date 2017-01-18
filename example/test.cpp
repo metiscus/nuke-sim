@@ -16,8 +16,6 @@
 
 #include "resourcemanager.h"
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 
 void game_frame(void *pArg, struct scheduler *s, sched_uint begin, sched_uint end, sched_uint thread);
 
@@ -29,7 +27,7 @@ int main(int argc, char** argv)
 
 	ResourceManager::initialize();
 
-	boost::uuids::uuid guid = boost::uuids::random_generator()();
+	Resource::Guid guid = Resource::random_guid();
 	auto future_guid = ResourceManager::load_file_as_resource("qgit.png", guid, ImageResourceType);
 
     // Create profiler

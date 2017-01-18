@@ -23,6 +23,8 @@ Resource::Guid BinaryResource::load_file_as_guid(const std::string& filename, Gu
 	{
 		set_is_loaded();
 
+		LOG_F(INFO, "Loaded %s as a binary resource.", filename.c_str());
+
 		return guid;
 	}
 	else
