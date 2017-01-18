@@ -37,6 +37,11 @@ public:
 		return width_ * height_ * channels_;
 	}
 
+	inline const uint8_t* get_data() const
+	{
+		return &data_[0];
+	}
+
 	virtual Guid load_file(const std::string& filename);
 	virtual Guid load_file_as_guid(const std::string& filename, Guid guid);
 };

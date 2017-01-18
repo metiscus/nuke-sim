@@ -1,8 +1,9 @@
 #pragma once
 
+#include <atomic>
+#include <boost/uuid/uuid.hpp>
 #include <cstdint>
 #include <string>
-#include <boost/uuid/uuid.hpp>
 #include <vector>
 
 enum ResourceType
@@ -20,6 +21,7 @@ private:
 	ResourceType type_;
 	std::string name_;
 	Guid guid_;
+	std::atomic_bool is_loaded_;
 
 	std::vector<Guid> dependencies_;
 
@@ -27,6 +29,7 @@ public:
 	Resource()
 		: type_ (InvalidResource)
 		, name_ ("")
+		, is_loaded_(false)
 	{
 		;
 	}
@@ -83,7 +86,18 @@ public:
 		return !guid_.is_nil();
 	}
 
+	inline bool is_loaded() const
+	{
+		return is_loaded_;
+	}
+
 	virtual uint32_t get_memory_usage() const = 0;
 	virtual Guid load_file(const std::string& filename) = 0;
 	virtual Guid load_file_as_guid(const std::string& filename, Guid guid) = 0;
+
+protected:
+	inline void set_is_loaded()
+	{
+		is_loaded_ = true;
+	}
 };

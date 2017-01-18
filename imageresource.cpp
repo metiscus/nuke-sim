@@ -38,6 +38,8 @@ Resource::Guid ImageResource::load_file_as_guid(const std::string& filename, Gui
 
 		LOG_F(INFO, "Loaded image %s [%d x %d].", filename.c_str(), x, y);
 
+		set_is_loaded();
+
 		return guid;
 	}
 	else

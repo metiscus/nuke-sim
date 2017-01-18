@@ -14,6 +14,8 @@
 #include "color.h"
 #include "renderer_gl.h"
 
+#include "resourcemanager.h"
+
 void game_frame(void *pArg, struct scheduler *s, sched_uint begin, sched_uint end, sched_uint thread);
 
 RendererGL *renderer;
@@ -22,11 +24,23 @@ void draw_reactor(RendererGL& renderer);
 int main(int argc, char** argv)
 {
 
+	ResourceManager::initialize();
+
     // Create profiler
     Remotery *rmt;
     rmt_CreateGlobalInstance(&rmt);
 
 	Window::create_window(0, 0, 1024, 768, "Hello Test Window");
+	
+    bool keep_running = true;
+	Input::on_keyboard_down = [&keep_running](Input::InputEvent event)
+	{
+		if(event.button == Input::Key_Space)
+		{
+			keep_running = false;
+		}
+	};
+
 	Input::initialize();
 
 	rmt_BindOpenGL();
@@ -38,8 +52,6 @@ int main(int argc, char** argv)
     scheduler_init(&sched, &needed_memory, SCHED_DEFAULT, 0);
     memory = calloc(needed_memory, 1);
     scheduler_start(&sched, memory);
-    
-    bool keep_running = true;
 
     renderer = new RendererGL(1024, 768);
     renderer->load_font("font.ttf", {10, 12, 14});
@@ -65,6 +77,8 @@ int main(int argc, char** argv)
 
 
     rmt_DestroyGlobalInstance(rmt);
+
+    ResourceManager::shutdown();
 
     return 0;    
 }

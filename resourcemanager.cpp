@@ -1,15 +1,16 @@
 #include "resourcemanager.h"
 
-#include "scheduler.h"
+#include <boost/filesystem.hpp>
+#include <boost/tokenizer.hpp>
+#include <cstdlib>
 #include <cstring>
+#include "logging.h"
 #include <map>
 #include <memory>
 #include <mutex>
-#include "logging.h"
+#include <string>
 
-#include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
-
 
 namespace ResourceManager
 {
@@ -25,10 +26,25 @@ namespace ResourceManager
 
 	void initialize()
 	{
+		LOG_F(INFO, "Initializing ResourceManager");
+		const boost::char_separator<char> delim("; ");
+		const char* data_path_var = getenv("RESOURCE_MANAGER_DATA_PATH");
+		if(data_path_var != nullptr)
+		{
+			std::string path = data_path_var;
+			boost::tokenizer< boost::char_separator<char> > tokens(path, delim);
+			for(const auto& token : tokens)
+			{
+				LOG_F(INFO, "Adding data path '%s'.", token.c_str());
+				data_paths.push_back(token);
+			}
+		}
 	}
 
 	void shutdown()
 	{
+		//TODO: clean up allocated resources
+		LOG_F(ERROR, "Shutdown currently unimplemented.");
 	}
 
 	void add_data_path(const std::string& path)
@@ -82,6 +98,19 @@ namespace ResourceManager
 
 	std::future<ResourcePtr> get_resource_from_file(const std::string& file)
 	{
-
+		// Spawn a thread to load the resource file, return the future created 
+		return std::async(std::launch::async, [file] () -> ResourcePtr
+		{
+			Resource::Guid guid = load_resource_file_impl(file);
+			if(guid.is_nil())
+			{
+				LOG_F(INFO, "Loading %s returned a nil GUID.", file.c_str());
+				return ResourcePtr();
+			}
+			else
+			{
+				return get_resource(guid);
+			}
+		});
 	}
 }

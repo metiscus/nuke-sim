@@ -1,7 +1,6 @@
 CXXFLAGS=-gdwarf-4 -Wall -Wextra -pedantic -O0 -MD -Iimgui -I.
-LDFLAGS=-lpthread `pkg-config --static --libs glfw3` -lGL
+LDFLAGS=-lpthread `pkg-config --static --libs glfw3` -lGL -lboost_system -lboost_filesystem
 default: libbase.a example_test
-
 
 libBase_SRC=\
 	assert_macros.cpp\
