@@ -20,6 +20,4 @@ namespace ResourceManager
 
 	ResourcePtr get_resource(Resource::Guid guid);
 	std::future<ResourcePtr> get_resource_from_file(const std::string& file);
-
-	std::string find_resource_file(const std::string& file);
 }

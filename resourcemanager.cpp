@@ -90,96 +90,96 @@ namespace ResourceManager
 		  	}
 		  	return false;
 		}
-	}
 
-	std::string find_resource_file(const std::string& file)
-	{
-		try {
-			// use boost::filesystem to search all of the paths and return the first match
-			bool found_path = false;
-			fs::path path;
-			
-			LOG_F(INFO, "Finding resource file '%s'.", file.c_str());
-			for(auto itr = data_paths.begin(); !found_path && itr != data_paths.end(); ++itr)
-			{
-				LOG_F(INFO + 1, "Searching path '%s'.", itr->c_str());
-				found_path = find_file(*itr, file, path);
-			}
+		std::string find_resource_file(const std::string& file)
+		{
+			try {
+				// use boost::filesystem to search all of the paths and return the first match
+				bool found_path = false;
+				fs::path path;
+				
+				LOG_F(INFO, "Finding resource file '%s'.", file.c_str());
+				for(auto itr = data_paths.begin(); !found_path && itr != data_paths.end(); ++itr)
+				{
+					LOG_F(INFO + 1, "Searching path '%s'.", itr->c_str());
+					found_path = find_file(*itr, file, path);
+				}
 
-			if(found_path)
-			{
-				LOG_F(INFO, "Found path to resource file '%s'.", path.string().c_str());
-				return path.string();
+				if(found_path)
+				{
+					LOG_F(INFO, "Found path to resource file '%s'.", path.string().c_str());
+					return path.string();
+				}
+				else
+				{
+					LOG_F(WARNING, "Unable to find a path to file '%s'. Assuming CWD.", file.c_str());
+					return file;
+				}
 			}
-			else
+			catch(fs::filesystem_error e)
 			{
-				LOG_F(WARNING, "Unable to find a path to file '%s'. Assuming CWD.", file.c_str());
+				LOG_F(ERROR, e.what());
 				return file;
 			}
 		}
-		catch(fs::filesystem_error e)
-		{
-			LOG_F(ERROR, e.what());
-			return file;
-		}
-	}
 
-	Resource::Guid load_file_as_resource_impl(const std::string& file, Resource::Guid guid, ResourceType type = InvalidResourceType)
-	{
-		switch(type)
+		Resource::Guid load_file_as_resource_impl(const std::string& file, Resource::Guid guid, ResourceType type = InvalidResourceType)
 		{
-			case InvalidResourceType:
+			switch(type)
 			{
-				LOG_F(WARNING, "Invalid resource type indicated for file '%s'.", file.c_str());
-			}
-			break;
-
-			case ImageResourceType:
-			{
-				auto resource = std::make_shared<ImageResource>();
-				if(!resource->load_file_as_guid(file, guid).is_nil())
+				case InvalidResourceType:
 				{
-					resources_mutex.lock();
-					resources.insert(std::make_pair(guid, resource));
-					resources_mutex.unlock();
-					return guid;
+					LOG_F(WARNING, "Invalid resource type indicated for file '%s'.", file.c_str());
 				}
-			}
-			break;
+				break;
 
-			case BinaryResourceType:
-			{
-				auto resource = std::make_shared<BinaryResource>();
-				if(!resource->load_file_as_guid(file, guid).is_nil())
+				case ImageResourceType:
 				{
-					resources_mutex.lock();
-					resources.insert(std::make_pair(guid, resource));
-					resources_mutex.unlock();
-					return guid;
+					auto resource = std::make_shared<ImageResource>();
+					if(!resource->load_file_as_guid(file, guid).is_nil())
+					{
+						resources_mutex.lock();
+						resources.insert(std::make_pair(guid, resource));
+						resources_mutex.unlock();
+						return guid;
+					}
 				}
-			}
-			break;
-		}
-		return Resource::Guid();
-	}
+				break;
 
-	Resource::Guid load_resource_file_impl(const std::string& file, ResourceType type = InvalidResourceType)
-	{
-		switch(type)
+				case BinaryResourceType:
+				{
+					auto resource = std::make_shared<BinaryResource>();
+					if(!resource->load_file_as_guid(file, guid).is_nil())
+					{
+						resources_mutex.lock();
+						resources.insert(std::make_pair(guid, resource));
+						resources_mutex.unlock();
+						return guid;
+					}
+				}
+				break;
+			}
+			return Resource::Guid();
+		}
+
+		Resource::Guid load_resource_file_impl(const std::string& file, ResourceType type = InvalidResourceType)
 		{
-			case InvalidResourceType:
+			switch(type)
 			{
-				LOG_F(WARNING, "Invalid resource type indicated for file '%s'.", file.c_str());
-			}
-			break;
+				case InvalidResourceType:
+				{
+					LOG_F(WARNING, "Invalid resource type indicated for file '%s'.", file.c_str());
+				}
+				break;
 
-			case ImageResourceType:
-			{
-				LOG_F(WARNING, "Image files do not contain GUIDs, so you must call load_resource_file_as_guid_impl for file '%s'.", file.c_str());
+				case ImageResourceType:
+				{
+					LOG_F(WARNING, "Image files do not contain GUIDs, so you must call load_resource_file_as_guid_impl for file '%s'.", file.c_str());
+				}
+				break;
 			}
-			break;
+			return Resource::Guid();
 		}
-		return Resource::Guid();
 	}
 
 	std::future<Resource::Guid> load_resource_file(const std::string& file)
