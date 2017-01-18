@@ -11,6 +11,8 @@
 
 #include "logging.h"
 
+#include "core.h"
+
 #include "color.h"
 #include "renderer_gl.h"
 
@@ -21,6 +23,8 @@ void game_frame(void *pArg, struct scheduler *s, sched_uint begin, sched_uint en
 
 RendererGL *renderer;
 void draw_reactor(RendererGL& renderer);
+
+Core core;
 
 int main(int argc, char** argv)
 {
@@ -67,7 +71,11 @@ int main(int argc, char** argv)
     	glClearColor(0.8, 0.8, 0.8, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		core.simulate(1.0);
+
 		renderer->begin();
+
+		LOG_F(INFO, "Reactor flux: %f\n", core.get_flux());
 
         scheduler_add(&task, &sched, game_frame, 0, 1);
         scheduler_join(&sched, &task);
@@ -128,8 +136,10 @@ void draw_reactor(RendererGL& renderer)
 
 	// draw the reactor core
 	//auto core = reactor.get_core();
-	float temperature = 450.0;
-	float core_color_factor = std::min(1.0f, temperature / 800.0f);
+	//float temperature = 450.0;
+	//float core_color_factor = std::min(1.0f, temperature / 800.0f);
+
+	float core_color_factor = core.get_flux() / 100.0;
 	auto core_color = Color::FromRGBA( core_color_factor * 255.0, 0, 0, 255);
 	renderer.draw_rectangle(core_color, 110, 120, 190, 200, true, -1);
 	renderer.draw_rectangle(dark_gray, 100, 100, 200, 300, false, -1);
@@ -138,7 +148,9 @@ void draw_reactor(RendererGL& renderer)
 	float rod_start = 120;
 	float rod_height = 200-120;
 	float rod_position = 0.25;
-	rod_start += rod_height * (1.0 - rod_position);
+	Core::Inputs in = core.get_inputs();
+
+	rod_start += rod_height * (1.0 - (in.RodPosition / 2.25));
 	renderer.draw_rectangle(brown, 120, rod_start, 130, rod_start + rod_height, true, -2);
 	renderer.draw_rectangle(brown, 140, rod_start, 150, rod_start + rod_height, true, -2);
 	renderer.draw_rectangle(brown, 160, rod_start, 170, rod_start + rod_height, true, -2);

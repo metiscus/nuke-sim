@@ -178,6 +178,8 @@ namespace ResourceManager
 				}
 				break;
 			}
+
+			LOG_F(WARNING, "Unhandled resource type for file '%s'.", file.c_str());
 			return Resource::Guid();
 		}
 	}

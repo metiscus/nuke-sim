@@ -32,6 +32,7 @@ example_SRC=\
 	example/stb/stb_truetype.cpp\
 	example/renderer_gl.cpp\
 	example/test.cpp\
+	example/core.cpp\
 
 example_OBJ=$(example_SRC:.cpp=.o)
 
