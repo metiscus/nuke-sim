@@ -29,6 +29,8 @@ Core core;
 int main(int argc, char** argv)
 {
 
+	int time_scale = 20;
+
 	ResourceManager::initialize();
 
 	Resource::Guid guid = Resource::random_guid();
@@ -41,11 +43,46 @@ int main(int argc, char** argv)
 	Window::create_window(0, 0, 1024, 768, "Hello Test Window");
 	
     bool keep_running = true;
-	Input::on_keyboard_down = [&keep_running](Input::InputEvent event)
+	Input::on_keyboard_down = [&keep_running, &time_scale, &core](Input::InputEvent event)
 	{
 		if(event.button == Input::Key_Space)
 		{
 			keep_running = false;
+		}
+
+		if(event.button == Input::Key_Q)
+		{
+			time_scale += 1;
+		}
+
+		if(event.button == Input::Key_E)
+		{
+			time_scale += 10;
+		}
+
+		if(event.button == Input::Key_R)
+		{
+			time_scale = 1;
+		}
+
+		if(event.button == Input::Key_P)
+		{
+			time_scale = 0;
+		}		
+
+		if(event.button == Input::Key_S)
+		{
+			time_scale -= 1;
+		}
+
+		if(event.button == Input::Key_U)
+		{
+			core.set_rod_position(core.get_rod_position() - 0.1);
+		}
+
+		if(event.button == Input::Key_D)
+		{
+			core.set_rod_position(core.get_rod_position() + 0.1);
 		}
 	};
 
@@ -64,6 +101,8 @@ int main(int argc, char** argv)
     renderer = new RendererGL(1024, 768);
     renderer->load_font("font.ttf", {10, 12, 14});
 
+    double ttime = 0.0;
+
     while(keep_running)
     {
     	//rmt_LogText("start profiling");
@@ -71,11 +110,13 @@ int main(int argc, char** argv)
     	glClearColor(0.8, 0.8, 0.8, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		core.simulate(1.0);
+		core.simulate((float)time_scale * 1.0 / 60.0);
+
+		ttime += (float)time_scale * 1.0 / 60.0;
 
 		renderer->begin();
 
-		LOG_F(INFO, "Reactor flux: %f\n", core.get_flux());
+		LOG_F(INFO, "Time: %lf\tReactor flux: %f\n", ttime, core.get_flux());
 
         scheduler_add(&task, &sched, game_frame, 0, 1);
         scheduler_join(&sched, &task);
@@ -139,7 +180,7 @@ void draw_reactor(RendererGL& renderer)
 	//float temperature = 450.0;
 	//float core_color_factor = std::min(1.0f, temperature / 800.0f);
 
-	float core_color_factor = core.get_flux() / 100.0;
+	float core_color_factor = core.get_flux() / 1000.0;
 	auto core_color = Color::FromRGBA( core_color_factor * 255.0, 0, 0, 255);
 	renderer.draw_rectangle(core_color, 110, 120, 190, 200, true, -1);
 	renderer.draw_rectangle(dark_gray, 100, 100, 200, 300, false, -1);
@@ -148,9 +189,8 @@ void draw_reactor(RendererGL& renderer)
 	float rod_start = 120;
 	float rod_height = 200-120;
 	float rod_position = 0.25;
-	Core::Inputs in = core.get_inputs();
 
-	rod_start += rod_height * (1.0 - (in.RodPosition / 2.25));
+	rod_start += rod_height * (1.0 - (core.get_rod_position() / 4.0));
 	renderer.draw_rectangle(brown, 120, rod_start, 130, rod_start + rod_height, true, -2);
 	renderer.draw_rectangle(brown, 140, rod_start, 150, rod_start + rod_height, true, -2);
 	renderer.draw_rectangle(brown, 160, rod_start, 170, rod_start + rod_height, true, -2);
