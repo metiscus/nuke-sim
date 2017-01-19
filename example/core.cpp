@@ -39,6 +39,7 @@ namespace Constants
 	double TpcLoss = 10.0;		// temperature loss between Tpc,CL and Tpci
 	double ToutPC  = 293.0;
 	double Msg     = 120.56;	// mass of steam / water through steam-generator
+	double Wr      = 13.75e8;   // W
 
 #if 0
 	double iodine_fission_yield = 6.2e-2;
@@ -58,6 +59,8 @@ namespace Constants
 	//double xenon_capture_probability = 2.65e-2; // per second
 
 	constexpr double neutron_scale = 1e4;
+
+	static constexpr double BARToPsi = 14.504;
 }
 
 namespace
@@ -90,14 +93,29 @@ namespace
 			return pow(x,y);
 		}
 	}
+
+	inline double compute_water_boil_temperature(double pressure)
+	{
+		//const double hvap = 40.66; //kj/mol
+		//const double T0 = 100.0;
+		//const double P0 = 101.325e3; // 1 atm
+		//const double R = 8.3144589e-5;
+		//double boiling_point = 1.0 / ((1.0 / T0) - (R*log((pressure * PSIToPa)/P0)) / hvap);
+		static constexpr double PSIToKPa = 6.895;
+		double boiling_point = log((pressure * PSIToKPa) / 66.5238) / 0.015758;
+		return boiling_point;
+	}
 }
 
 Core::Core()
 	: rod_position_(0.0)
 	, flux_(1.0)
-	, iodine_135_concentration_(0.0f)
-	, xenon_135_concentration_(0.0f)
+	, primary_loop_coolant_mass_(180600.0)
+	, primary_loop_coolant_temperature_(20.0)
+	, primary_loop_coolant_pressure_(123.0 * Constants::BARToPsi)
+	, primary_loop_coolant_volume_(242)
 {
+
 }
 
 void Core::simulate(double dt)
@@ -107,99 +125,31 @@ void Core::simulate(double dt)
 
 	constexpr double FixedTimestep = 1.0 / 60.0;
 
-	static double time_since_decay_step = 0.0;
-
-
-	fprintf(stderr, "rods: %lf\tflux: %lf\tXe135: %lf\tI135: %lf\n", rod_position_, flux_, xenon_135_concentration_, iodine_135_concentration_);
 	while(timebank > FixedTimestep)
 	{
 		timebank -= FixedTimestep;
-		time_since_decay_step += FixedTimestep;
 
 		
 		// Integrate the neutron flux in the core
 		double dFlux = (1.0 / Constants::Lambda) * (Constants::RodParams[0] * rod_position_ * rod_position_ + Constants::RodParams[1] * rod_position_ + Constants::RodParams[2]) * flux_ + Constants::S;
-
-		// The capture of a neutron by Xe135 results in a loss of flux, as well as a loss of Xe135 concentration
-		double neutron_flux = flux_ * Constants::neutron_scale;
-		double xenon_flux_capture = FixedTimestep * neutron_flux * Constants::xenon_capture_probability * xenon_135_concentration_;
-		xenon_135_concentration_ -= std::min(xenon_flux_capture, xenon_135_concentration_);
-
-		//double iodine_flux_capture = FixedTimestep * neutron_flux * Constants::iodine_capture_probability * iodine_135_concentration_;
-		//iodine_135_concentration_ -= std::min(iodine_flux_capture, iodine_135_concentration_);
 		
-		flux_ = flux_ + dFlux * FixedTimestep; /* - iodine_flux_capture; */
-		neutron_flux = flux_ * Constants::neutron_scale;
+		flux_ = flux_ + dFlux * FixedTimestep;
 
 		if(flux_ <= 0.0)
 		{
 			flux_ = 0.0;
 		}
 
-#if 0
-		while(time_since_decay_step > 0.1)
-		{
-			time_since_decay_step -= 0.1;
+		// Thermal output of the reactor core
+		double thermal_output = flux_ * 1e-3 * Constants::Wr;
+		double joules_transferred = thermal_output * FixedTimestep;
+		double water_temperature_difference = joules_transferred / (primary_loop_coolant_mass_ * Constants::CpPC);
+		
 
-			double iodine_decays = 0.5 * (iodine_135_concentration_ * 0.1 / Constants::iodine_half_life);
-			iodine_135_concentration_ -= std::min(iodine_decays, iodine_135_concentration_);
-			xenon_135_concentration_  += iodine_decays;
-		}
-#else
-		double iodine_decays = 0.5 * (iodine_135_concentration_ * FixedTimestep / Constants::iodine_half_life);
-		iodine_135_concentration_ -= std::min(iodine_decays, iodine_135_concentration_);
-		xenon_135_concentration_  += iodine_decays;
-#endif
+		fprintf(stderr, "Water tmp: %lf xnge: %lf  %lf\n", primary_loop_coolant_temperature_, water_temperature_difference, compute_water_boil_temperature(primary_loop_coolant_pressure_));
 
-		//fprintf(stderr, "flux: %lf\t xecap: %lf\n", flux_, xenon_flux_capture);
+		primary_loop_coolant_temperature_ += water_temperature_difference;
+		double water_boil_temp = compute_water_boil_temperature(primary_loop_coolant_pressure_);
 
-		// The reaction of U235 generates iodine 135 as a product of the fission of U235;
-		// note that the yield is per atom, but we are measuring neutron flux which is 3x the number of reacting
-		// U235 atoms.
-		double iodine_135_generation =  neutron_flux / 3.0 * (FixedTimestep * Constants::iodine_fission_yield + Constants::iodine_fission_yield_sq * FixedTimestep*FixedTimestep);
-		iodine_135_concentration_ += iodine_135_generation;
-
-		// Some xenon in the reactor comes as direct fission products
-		iodine_135_concentration_ += FixedTimestep * Constants::xenon_fission_yield * neutron_flux / 3.0;
-
-		//fprintf(stderr, "I135: %lf\t Decay: %lf\n", 1e3*iodine_135_concentration_, iodine_decays);
-		//fprintf(stderr, "Xe135: %lf\n", 1e3*xenon_135_concentration_);
-
-
-
-		//double reactor_thermal_output = Constants::Cpsi * flux_;
-		//double dTout = 1.0 / (Constants::CpPC * state_.Mpc) + reactor_thermal_output
-
-		// Integrate Mpc
-		//double dMpc = Constants::min - Constants::mout;
-		//state_.Mpc = state_.Mpc + dMpc * FixedTimestep;
-
-		// Integrate Tpc
-		//double dTpc = 1.0 / (Constants::CpPC * state_.Mpc) * (Constants::CpPC * Constants::min * (-Constants::TpcLoss) 
-		//			+ outputs_.Wr 
-		//			+ Constants::CpPC * Constants::mout * 15.0
-		//			- 6.0 * Constants::KtSG1*my_pow(state_.Tpc - state_.Tw, Constants::alpha)
-		//			- Constants::KlossPC * (state_.Tpc - Constants::ToutPC));
-		//state_.Tpc += state_.Tpc * FixedTimestep * dTpc;
-
-		// Integrate Tsg
-		//const double Msgin = Msg - 100;
-		//double dTsg = 1.0 / (Constants::CpSG * state_.Msg) * (Constants::CpSG * Msg)
-
-		// Integrate Mpr
-		//outputs_.Mpr = (Constants::min - Constants::mout) - Constants::V0pc * water_density(dTpc);
-
-		// update outputs
-		//outputs_.Wr  = Constants::Cpsi * state_.N;
-		//outputs_.Psg = saturated_vapor_pressure(state_.Tpr);
-		//outputs_.Lpr = (1.0 / Constants::Apr) * ((state_.Mpc / water_density(state_.Tpc)) - Constants::V0pc);
-		//outputs_.Ppr = saturated_vapor_pressure(state_.Tpr);
-
-		//fprintf(stderr, "\trods: %lf\tflux: %lf\tXe135: %lf\tI135: %lf\n", rod_position_, flux_, xenon_135_concentration_, iodine_135_concentration_);
 	}
-
-
-
-	//if(rod_position_ > 0.5) rod_position_ -= 1.e-2 * FixedTimestep;
-
 }

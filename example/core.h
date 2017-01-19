@@ -7,6 +7,9 @@ private:
 	double flux_;
 	double rod_position_;
 	double primary_loop_coolant_mass_;
+	double primary_loop_coolant_temperature_;
+	double primary_loop_coolant_pressure_;
+	double primary_loop_coolant_volume_;
 	int    pressurizer_count_;
 
 	double iodine_135_concentration_;
