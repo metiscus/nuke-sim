@@ -111,11 +111,51 @@ Core::Core()
 	: rod_position_(0.0)
 	, flux_(1.0)
 	, primary_loop_coolant_mass_(180600.0)
-	, primary_loop_coolant_temperature_(20.0)
+	, primary_loop_coolant_mass_nominal_(1.2*primary_loop_coolant_mass_)
+	, primary_loop_coolant_temperature_(200.0)
 	, primary_loop_coolant_pressure_(123.0 * Constants::BARToPsi)
-	, primary_loop_coolant_volume_(242)
+	, primary_loop_coolant_volume_(242)	// m3
+	//, primary_loop_coolant_volume_nominal_(primary_loop_coolant_volume_) // m3
+	, primary_loop_coolant_volume_nominal_(1.25 * water_density(primary_loop_coolant_temperature_ + 273.15) * primary_loop_coolant_mass_nominal_)
+	, reactor_coolant_pump_mass_flow_(2.97) // kg/s
+	, reactor_cooland_pump_online_(true)
+	, pressurizer_area_(4.52)
+	, pressurizer_coolant_mass_(0.0)
+	, pressurizer_relief_mass_nominal_(100000)
+	, pressurizer_relief_mass_(50000)
+	, pressurizer_coolant_level_(0.0)
+	, core_mass_flow_(0.0)
+	, sump_mass_(0.0)
 {
 
+}
+
+void Core::simulate_nuclear_reaction(double dt)
+{
+	// Integrate the neutron flux in the core
+	double dFlux = (1.0 / Constants::Lambda) * (Constants::RodParams[0] * rod_position_ * rod_position_ + Constants::RodParams[1] * rod_position_ + Constants::RodParams[2]) * flux_ + Constants::S;
+	
+	flux_ = flux_ + dFlux * dt;
+
+	if(flux_ <= 0.0)
+	{
+		flux_ = 0.0;
+	}
+
+	// Thermal output of the reactor core and its effect on the coolant
+	double thermal_output = flux_ * 1e-3 * Constants::Wr;
+	double joules_transferred = thermal_output * dt;
+	primary_loop_coolant_temperature_ += joules_transferred / (primary_loop_coolant_mass_ * Constants::CpPC);
+}
+
+void Core::simulate_inner_cooling_loop(double dt)
+{
+	// The reactor will heat the liquid in the main cooling loop.
+	// We assume that the liquid in the cooling loop is "well mixed"
+	// The liquid in the cooling loop will expand based on the density function above
+	primary_loop_coolant_volume_ =  primary_loop_coolant_mass_ / water_density(primary_loop_coolant_temperature_);
+
+	// The primary cooling loop has a fixed maximum volume, if the fluid increases 
 }
 
 void Core::simulate(double dt)
@@ -129,27 +169,53 @@ void Core::simulate(double dt)
 	{
 		timebank -= FixedTimestep;
 
-		
-		// Integrate the neutron flux in the core
-		double dFlux = (1.0 / Constants::Lambda) * (Constants::RodParams[0] * rod_position_ * rod_position_ + Constants::RodParams[1] * rod_position_ + Constants::RodParams[2]) * flux_ + Constants::S;
-		
-		flux_ = flux_ + dFlux * FixedTimestep;
+		// Simulate the neutron flux based on the control rod position
+		simulate_nuclear_reaction(FixedTimestep);
 
-		if(flux_ <= 0.0)
+		// Pressurizer Inventory Controller
+		// This controls the level in the pressurizer using the pressurized relief tank coolant
+		constexpr double KPressurizerLevel = 1;
+		constexpr double KPrimaryCoolantTemp = 1.0;
+		constexpr double KReferenceCoolantMass = 0.01;
+		constexpr double KMassFlow = -0.1;
+		double pressurizer_mass_flow_rate = KMassFlow * (
+														  KPressurizerLevel * pressurizer_coolant_level_ 
+										 			    - KPrimaryCoolantTemp * primary_loop_coolant_temperature_
+										                - KReferenceCoolantMass * (primary_loop_coolant_mass_nominal_)
+										               );
+
+		//
+		double pressurizer_mass_flow = FixedTimestep * pressurizer_mass_flow_rate;
+		if(pressurizer_mass_flow < 0.0)
 		{
-			flux_ = 0.0;
+			// coolant is flowing out of the relief tank and into the pressurizer
+			pressurizer_mass_flow = std::min(-pressurizer_mass_flow, pressurizer_relief_mass_);
+			pressurizer_relief_mass_ -= pressurizer_mass_flow;
+		}
+		else if(pressurizer_mass_flow>0.0)	// technically this would imply that the PORV is open!
+		{
+			// coolant is flowing into the relief tank and out of the pressurizer
+			double tank_space = pressurizer_relief_mass_nominal_ - pressurizer_relief_mass_;
+			double tank_flow = std::min(pressurizer_mass_flow, tank_space);
+			pressurizer_relief_mass_ += tank_flow;
+			pressurizer_mass_flow += tank_flow;
+			sump_mass_ += -pressurizer_mass_flow;
 		}
 
-		// Thermal output of the reactor core
-		double thermal_output = flux_ * 1e-3 * Constants::Wr;
-		double joules_transferred = thermal_output * FixedTimestep;
-		double water_temperature_difference = joules_transferred / (primary_loop_coolant_mass_ * Constants::CpPC);
-		
+		primary_loop_coolant_mass_ += pressurizer_mass_flow;
+		fprintf(stderr, "Mass: %lf, Nom: %lf\n", primary_loop_coolant_mass_, primary_loop_coolant_mass_nominal_);
 
-		fprintf(stderr, "Water tmp: %lf xnge: %lf  %lf\n", primary_loop_coolant_temperature_, water_temperature_difference, compute_water_boil_temperature(primary_loop_coolant_pressure_));
 
-		primary_loop_coolant_temperature_ += water_temperature_difference;
+
+		//fprintf(stderr, "Water tmp: %lf xnge: %lf  %lf\n", primary_loop_coolant_temperature_, water_temperature_difference, compute_water_boil_temperature(primary_loop_coolant_pressure_));
+
 		double water_boil_temp = compute_water_boil_temperature(primary_loop_coolant_pressure_);
+
+		primary_loop_coolant_volume_ = primary_loop_coolant_mass_ / water_density(primary_loop_coolant_temperature_);
+		pressurizer_coolant_volume_ = primary_loop_coolant_volume_ - primary_loop_coolant_volume_nominal_;
+		pressurizer_coolant_level_ = pressurizer_coolant_volume_ / pressurizer_area_;
+
+		fprintf(stderr, "Pressurizer mass flow: %lf Pressurizer level: %lf\n", pressurizer_mass_flow, pressurizer_coolant_level_);
 
 	}
 }
